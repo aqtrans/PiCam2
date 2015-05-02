@@ -2,29 +2,27 @@
 <head>
 <meta charset="UTF-8" />
 <script>
-var serversocket = new WebSocket("ws://localhost:8080/websocket");
-
+var serversocket = new WebSocket("ws://"+location.hostname+":"+location.port+"/websocket");
+serversocket.binaryType = "arraybuffer"
 serversocket.onopen = function() {
   serversocket.send("Connection init");
 }
 
 // Write message on receive
-serversocket.onmessage = function(e) {
-  document.getElementById('comms').innerHTML += "Received: " + e.data + "<br>";
+serversocket.onmessage = function(e){
+  var reader = new FileReader()
+  reader.onload = (function(self) {
+    return function(e) {
+      document.getElementById("screen").src = e.target.result;
+    }
+  })(this);
+  reader.readAsDataURL(new Blob([e.data]));
 };
-
-function senddata() {
-  var data = document.getElementById('sendtext').value;
-  serversocket.send(data);
-  document.getElementById('comms').innerHTML += "Sent: " + data + "<br>";
-}
 
 </script>
 </head>
 
 <body>
-<input id="sendtext" type="text" />
-<input type="button" id="sendBtn" value="send" onclick="senddata()"></input>
-<div id='comms'></div>
+  <img id="screen">
 </body>
 </html>
