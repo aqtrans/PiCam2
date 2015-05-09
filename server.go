@@ -14,6 +14,9 @@ func main(){
 
   flag.Parse()
 
+  imageData := make(chan []byte)
+  go camThread(imageData)
+
   log( "Started server on port " + *port )
 
   upgrade := websocket.Upgrader{
@@ -22,7 +25,7 @@ func main(){
   }
 
   http.HandleFunc("/websocket", func( res http.ResponseWriter, req *http.Request){
-   handleConnection( res, req, upgrade )
+   handleConnection( res, req, upgrade, imageData )
   })
 
   http.Handle("/", http.FileServer(http.Dir("public/")))
@@ -33,7 +36,7 @@ func main(){
   }
 }
 
-func handleConnection( res http.ResponseWriter, req *http.Request, upgrade websocket.Upgrader ){
+func handleConnection( res http.ResponseWriter, req *http.Request, upgrade websocket.Upgrader, imageData chan []byte ){
   log("Started a stream!")
 
   conn, err := upgrade.Upgrade(res, req, nil)
@@ -41,18 +44,22 @@ func handleConnection( res http.ResponseWriter, req *http.Request, upgrade webso
     panic( err )
   }
 
+
   for{
-    imageData, err := exec.Command("fswebcam", "-").Output()
+    conn.WriteMessage( websocket.BinaryMessage, <-imageData )
+  }
+}
+
+func camThread(imageData chan []byte ){
+  for{
+    currentFrame, err := exec.Command("fswebcam", "-").Output()
     if err != nil{
-      panic(err)
+      panic( err )
     }
 
-    // Throttle this shit
+    imageData<-currentFrame
     time.Sleep( time.Millisecond * 200 )
-
-    conn.WriteMessage( websocket.BinaryMessage, imageData )
   }
-
 }
 
 func log( message string ){
