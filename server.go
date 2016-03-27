@@ -52,13 +52,13 @@ func handleConnection( res http.ResponseWriter, req *http.Request, upgrade webso
 
 func camThread(imageData chan []byte ){
   for{
-    currentFrame, err := exec.Command("fswebcam", "-").Output()
+    currentFrame, err := exec.Command("/opt/vc/bin/raspistill", "-n", "-vf", "-hf", "-ex", "night", "-w", "1024", "-h", "768", "-q", "50", "-t", "1000", "-o", "-").Output()
     if err != nil{
       panic( err )
     }
 
     imageData<-currentFrame
-    time.Sleep( time.Millisecond * 200 )
+    time.Sleep( time.Millisecond * 1000 )
   }
 }
 
